@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -11,6 +12,7 @@ import org.example.expert.config.JwtUtil;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.BufferedReader;
@@ -37,7 +39,7 @@ public class AccessLoggingAop {
     private void user() {
     }
 
-    @Around("comment() || user()")
+    @After("comment() || user()")
     public Object execute(ProceedingJoinPoint joinPoint) throws Throwable {
         // 요청 시각 시록
         LocalDateTime requestTime = LocalDateTime.now();
@@ -54,11 +56,11 @@ public class AccessLoggingAop {
             return joinPoint.proceed();  // 유저가 없는 경우 요청을 진행하되, 기록은 생략
         }
 
-        log.info("요청한 사용자의 ID : {}, API 요청 시각 : {}, API 요청 URL : {}, Request Body : {}",
-                userId, requestTime, requestUrl, requestBody );
-
         //메서드 실행 및 응답 기록
         Object response = joinPoint.proceed(); // 실제 메서드 실행
+
+        log.info("요청한 사용자의 ID : {}, API 요청 시각 : {}, API 요청 URL : {}, Request Body : {}",
+                userId, requestTime, requestUrl, requestBody );
 
         // 응답 본문 로깅
         String responseBody = response != null ? response.toString() : "No Response Body";
