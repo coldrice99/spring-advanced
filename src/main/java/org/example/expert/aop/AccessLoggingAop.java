@@ -11,9 +11,11 @@ import org.example.expert.config.JwtUtil;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -70,18 +72,12 @@ public class AccessLoggingAop {
     }
 
     private String getRequestBody() {
-        try {
-            StringBuilder stringBuilder = new StringBuilder();
-            BufferedReader bufferedReader = request.getReader();
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-            return stringBuilder.toString();
-        } catch (IOException e) {
-            log.error("Failed to read request body", e);
-            return "Failed to read request body";
+        if (request instanceof ContentCachingRequestWrapper) {
+            ContentCachingRequestWrapper cachingRequest = (ContentCachingRequestWrapper) request;
+            byte[] contentAsByteArray = cachingRequest.getContentAsByteArray();
+            return new String(contentAsByteArray, StandardCharsets.UTF_8);
         }
+        return "No Request Body";
     }
 
 }
